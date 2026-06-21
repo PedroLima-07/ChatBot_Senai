@@ -2,7 +2,7 @@
 # POWERTECH AI ASSISTANT - INDUSTRIAL TECH PREMIUM UI
 # Projeto Final - SENAI
 # Desenvolvedor: Pedro
-# Visual: WhatsApp Style + Local High-Res Avatars
+# Visual: WhatsApp Style + Local High-Res Avatars & Logo
 # ============================================================
 
 import os
@@ -22,16 +22,24 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_nvidia_ai_endpoints import NVIDIAEmbeddings, ChatNVIDIA
 
 # ============================================================
-# CONFIGURAÇÃO DOS ÍCONES LOCAIS (CAMINHO DAS IMAGENS 512PX)
+# CONFIGURAÇÃO DOS ÍCONES E LOGO LOCAL (PASTA ASSETS)
 # ============================================================
 ICON_USER = "assets/user.png"
 ICON_IA = "assets/ai.png"
 
-# Sistema de segurança: Se as fotos não estiverem na pasta assets, usa emojis de backup
+# Sistema de segurança para Avatars
 if not os.path.exists(ICON_USER):
     ICON_USER = "😎"
 if not os.path.exists(ICON_IA):
     ICON_IA = "🤖"
+
+# Busca automática pelo formato da logo (png, jpg ou jpeg)
+PATH_LOGO = None
+for ext in [".png", ".jpg", ".jpeg"]:
+    caminho_teste = f"assets/logo{ext}"
+    if os.path.exists(caminho_teste):
+        PATH_LOGO = caminho_teste
+        break
 
 # ============================================================
 # CONFIGURAÇÃO DA PÁGINA E DESIGN PREMIUM (CSS INJECTION)
@@ -39,7 +47,8 @@ if not os.path.exists(ICON_IA):
 st.set_page_config(
     page_title="PowerTech AI Assistant",
     page_icon="🤖",
-    layout="wide"
+    layout="wide",
+    initial_sidebar_state="expanded"
 )
 
 # Injeção CSS com a paleta Industrial Tech Premium organizada por blocos
@@ -77,6 +86,26 @@ st.markdown("""
     [data-testid="stSidebar"] {
         background-color: #111A2E !important; /* Fundo Sidebar */
         border-right: 1px solid #162235;
+    }
+    
+    /* CORREÇÃO DO BOTÃO: Garante que o botão de abrir/fechar a sidebar apareça estilizado */
+    header[data-testid="stHeader"] {
+        background-color: transparent !important;
+        background: transparent !important;
+    }
+    div[data-testid="stHeaderDecoration"] {
+        visibility: hidden;
+    }
+    button[data-testid="stSidebarCollapseButton"] {
+        background-color: #162235 !important;
+        color: #E6EDF3 !important;
+        border: 1px solid #1E2A3A !important;
+        border-radius: 6px !important;
+    }
+    button[data-testid="stSidebarCollapseButton"]:hover {
+        background-color: #1E2A3A !important;
+        color: #00A67E !important;
+        border-color: #00A67E !important;
     }
     
     /* Cards de Informação na Sidebar */
@@ -174,6 +203,11 @@ st.markdown("""
     /* ==========================================
        BLOCO 4: SISTEMAS DE ENTRADA (INPUTS E BOTÕES)
        ========================================== */
+    /* CORREÇÃO DO RODAPÉ: Elimina completamente a faixa preta abaixo do input */
+    div[data-testid="stBottom"], div[data-testid="stBottomBlockContainer"] {
+        background-color: #0B1220 !important;
+    }
+
     div[data-testid="stChatInput"] {
         border-radius: 10px !important;
         background-color: #162235 !important; /* Fundo do Input */
@@ -184,8 +218,8 @@ st.markdown("""
         background-color: transparent !important;
     }
     
-    /* Ocultação de menus padrão do Streamlit */
-    #MainMenu {visibility: hidden;}
+    /* Ocultação limpa do menu de deploy (Mantendo o cabeçalho funcional) */
+    div[data-testid="stToolbar"] {visibility: hidden;}
     footer {visibility: hidden;}
     header {visibility: hidden;}
 </style>
@@ -231,10 +265,15 @@ def inicializar_rag():
 retriever = inicializar_rag() if nvidia_api_key else None
 
 # ============================================================
-# PAINEL LATERAL (SIDEBAR) - ATUALIZADO PREMIUM
+# PAINEL LATERAL (SIDEBAR) - LOGO INTEGRADA
 # ============================================================
 with st.sidebar:
-    st.markdown("<h2 style='color:#00A67E; font-weight:700; margin-bottom:0;'>PowerTech</h2>", unsafe_allow_html=True)
+    # Se a logo existir na pasta assets, renderiza a imagem; caso contrário, usa o texto padrão
+    if PATH_LOGO:
+        st.image(PATH_LOGO, use_container_width=True)
+    else:
+        st.markdown("<h2 style='color:#00A67E; font-weight:700; margin-bottom:0;'>PowerTech</h2>", unsafe_allow_html=True)
+        
     st.markdown("<p style='color:#9AA4B2; font-size:0.85rem; margin-top:0;'>Solutions & Automation</p>", unsafe_allow_html=True)
     st.markdown("<hr style='margin: 10px 0; border-color: #1E2A3A;'>", unsafe_allow_html=True)
     
@@ -292,7 +331,7 @@ subtitle_placeholder = st.empty()
 texto_titulo = "🤖 PowerTech AI Support"
 texto_subtitulo = "Assistente Avançado de Diagnóstico Cooperativo"
 
-# Efeito máquina de escrever (0.12 segundos por caractere)
+# Efeito máquina de escrever
 if not st.session_state.titulo_carregado:
     for i in range(1, len(texto_titulo) + 1):
         title_placeholder.markdown(f'<h1 class="main-title">{texto_titulo[:i]}</h1>', unsafe_allow_html=True)
